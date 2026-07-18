@@ -1,4 +1,5 @@
 const Product = require("../models/Product");
+const cloudinary = require("../config/cloudinary");
 
 // CREATE product
 exports.createProduct = async (req, res) => {
@@ -137,13 +138,51 @@ exports.updateProduct = async (req, res) => {
 
 
 // DELETE product
+// exports.deleteProduct = async (req, res) => {
+//   try {
+//     const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+//     if (!deletedProduct) return res.status(404).json({ message: "Product not found" });
+//     res.json({ message: "Product deleted successfully" });
+//   } catch (err) {
+//     console.error("Failed to delete product:", err);
+//     res.status(500).json({ message: "Failed to delete product", error: err.message });
+//   }
+// };
+
 exports.deleteProduct = async (req, res) => {
   try {
-    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
-    if (!deletedProduct) return res.status(404).json({ message: "Product not found" });
-    res.json({ message: "Product deleted successfully" });
+    const product = await Product.findById(req.params.id);
+
+    if (!product)
+      return res.status(404).json({ message: "Product not found" });
+
+    // Delete all images from Cloudinary
+    if (product.images && product.images.length > 0) {
+      for (const imageUrl of product.images) {
+        const publicId = imageUrl
+          .split("/")
+          .slice(-2)
+          .join("/")
+          .split(".")[0];
+
+        try {
+          await cloudinary.uploader.destroy(publicId);
+        } catch (err) {
+          console.error("Cloudinary delete failed:", err);
+        }
+      }
+    }
+
+    await Product.findByIdAndDelete(req.params.id);
+
+    res.json({
+      message: "Product deleted successfully",
+    });
+
   } catch (err) {
-    console.error("Failed to delete product:", err);
-    res.status(500).json({ message: "Failed to delete product", error: err.message });
+    console.error(err);
+    res.status(500).json({
+      message: "Failed to delete product",
+    });
   }
 };

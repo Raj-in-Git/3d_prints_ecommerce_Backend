@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const path = require("path");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../config/cloudinary");
 const {
   createProduct,
   getProducts,
@@ -11,14 +12,24 @@ const {
 } = require("../controllers/productController");
 
 // Set storage for uploaded images
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/"); // folder to store images
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, "uploads/"); // folder to store images
+//   },
+//   filename: function (req, file, cb) {
+//     cb(null, Date.now() + path.extname(file.originalname)); // unique filename
+//   }
+// });
+// const upload = multer({ storage });
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "visei-products",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
   },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname)); // unique filename
-  }
 });
+
 const upload = multer({ storage });
 
 // Routes
